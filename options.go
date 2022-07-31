@@ -14,11 +14,12 @@ const (
 )
 
 type Options struct {
-	method  string
-	url     string
-	headers http.Header
-	out     interface{}
-	outType OutType
+	method     string
+	url        string
+	headers    http.Header
+	out        interface{}
+	outType    OutType
+	extensions []Extension
 }
 
 type OptionFunc func(options *Options) error
@@ -69,6 +70,18 @@ func WithOut(out interface{}, outType OutType) OptionFunc {
 	return func(options *Options) error {
 		options.out = out
 		options.outType = outType
+		return nil
+	}
+}
+
+func WithExtensions(extensions ...Extension) OptionFunc {
+	return func(options *Options) error {
+		if options.extensions == nil {
+			options.extensions = make([]Extension, 0)
+		}
+		for _, extension := range extensions {
+			options.extensions = append(options.extensions, extension)
+		}
 		return nil
 	}
 }

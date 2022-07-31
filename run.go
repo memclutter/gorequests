@@ -19,9 +19,10 @@ func Put(options ...OptionFunc) error {
 	return Run(append(options, WithMethod(http.MethodPut))...)
 }
 
-func Run(optionsOverride ...OptionFunc) error {
+func Run(optionsOverride ...OptionFunc) (err error) {
 	options := &Options{
-		method: http.MethodGet,
+		method:     http.MethodGet,
+		extensions: make([]Extension, 0),
 	}
 
 	for _, optionOverride := range optionsOverride {
@@ -30,7 +31,12 @@ func Run(optionsOverride ...OptionFunc) error {
 		}
 	}
 
-	client := http.Client{}
+	client := &http.Client{}
+	for _, ext := range options.extensions {
+		if client, err = ext.ClientOverride(client); err != nil {
+			return fmt.Errorf("extension client override error: %v", err)
+		}
+	}
 
 	req, err := http.NewRequest(options.method, options.url, nil)
 	if err != nil {
@@ -39,6 +45,12 @@ func Run(optionsOverride ...OptionFunc) error {
 
 	if options.headers != nil {
 		req.Header = options.headers
+	}
+
+	for _, ext := range options.extensions {
+		if req, err = ext.RequestOverride(req); err != nil {
+			return fmt.Errorf("extension request override error: %v", err)
+		}
 	}
 
 	res, err := client.Do(req)
