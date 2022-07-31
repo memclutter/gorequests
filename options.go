@@ -17,6 +17,7 @@ type Options struct {
 	method     string
 	url        string
 	headers    http.Header
+	cookies    []*http.Cookie
 	out        interface{}
 	outType    OutType
 	extensions []Extension
@@ -44,12 +45,11 @@ func WithUrl(url string, args ...interface{}) OptionFunc {
 func WithHeaders(headers http.Header) OptionFunc {
 	return func(options *Options) error {
 		if options.headers == nil {
-			options.headers = headers
-		} else {
-			for k, vv := range headers {
-				for _, v := range vv {
-					options.headers.Add(k, v)
-				}
+			options.headers = http.Header{}
+		}
+		for k, vv := range headers {
+			for _, v := range vv {
+				options.headers.Add(k, v)
 			}
 		}
 		return nil
@@ -62,6 +62,18 @@ func WithHeader(key, value string) OptionFunc {
 			options.headers = http.Header{}
 		}
 		options.headers.Add(key, value)
+		return nil
+	}
+}
+
+func WithCookies(cookies ...*http.Cookie) OptionFunc {
+	return func(options *Options) error {
+		if options.cookies == nil {
+			options.cookies = make([]*http.Cookie, 0)
+		}
+		for _, cookie := range cookies {
+			options.cookies = append(options.cookies, cookie)
+		}
 		return nil
 	}
 }

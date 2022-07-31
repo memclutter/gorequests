@@ -44,7 +44,17 @@ func Run(optionsOverride ...OptionFunc) (err error) {
 	}
 
 	if options.headers != nil {
-		req.Header = options.headers
+		for k, vv := range options.headers {
+			for _, v := range vv {
+				req.Header.Add(k, v)
+			}
+		}
+	}
+
+	if options.cookies != nil {
+		for _, cookie := range options.cookies {
+			req.AddCookie(cookie)
+		}
 	}
 
 	for _, ext := range options.extensions {

@@ -69,8 +69,8 @@ func TestWithHeaders(t *testing.T) {
 		headers http.Header
 	}{
 		{headers: http.Header{
-			"Accept":       []string{"application/json"},
-			"Content-Type": []string{"form/urlencoded"},
+			"accept":       []string{"application/json"},
+			"content-type": []string{"form/urlencoded"},
 		}},
 	}
 
@@ -83,6 +83,47 @@ func TestWithHeaders(t *testing.T) {
 			for _, v := range vv {
 				assert.Equalf(t, v, options.headers.Get(k), "The options.header[%s] value should be set", k)
 			}
+		}
+	}
+}
+
+func TestWithCookies(t *testing.T) {
+	cases := []struct {
+		cookies []*http.Cookie
+	}{
+		{
+			cookies: []*http.Cookie{
+				&http.Cookie{
+					Name:     "test",
+					Value:    "testval",
+					Domain:   "example.com",
+					HttpOnly: true,
+					Path:     "/path/",
+					Secure:   true,
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		options := &Options{}
+		if err := WithCookies(c.cookies...)(options); err != nil {
+			t.Fatal(err)
+		}
+		for i, exceptedCookie := range c.cookies {
+			found := false
+			for _, cookie := range options.cookies {
+				found = true
+				if cookie.Name == exceptedCookie.Name {
+					assert.Equalf(t, exceptedCookie.Value, cookie.Value, "The options.cookies[%d: %s].Value should be equal", i, exceptedCookie.Name)
+					assert.Equalf(t, exceptedCookie.Domain, cookie.Domain, "The options.cookies[%d: %s].Domain should be equal", i, exceptedCookie.Name)
+					assert.Equalf(t, exceptedCookie.HttpOnly, cookie.HttpOnly, "The options.cookies[%d: %s].HttpOnly should be equal", i, exceptedCookie.Name)
+					assert.Equalf(t, exceptedCookie.Path, cookie.Path, "The options.cookies[%d: %s].Path should be equal", i, exceptedCookie.Name)
+					assert.Equalf(t, exceptedCookie.Secure, cookie.Secure, "The options.cookies[%d: %s].Secure should be equal", i, exceptedCookie.Name)
+				}
+			}
+
+			assert.Truef(t, found, "The options.cookies[%d: %s] should be found", i, exceptedCookie.Name)
 		}
 	}
 }
