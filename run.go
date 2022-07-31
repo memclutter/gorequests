@@ -19,6 +19,14 @@ func Put(options ...OptionFunc) error {
 	return Run(append(options, WithMethod(http.MethodPut))...)
 }
 
+func Patch(options ...OptionFunc) error {
+	return Run(append(options, WithMethod(http.MethodPatch))...)
+}
+
+func Delete(options ...OptionFunc) error {
+	return Run(append(options, WithMethod(http.MethodDelete))...)
+}
+
 func Run(optionsOverride ...OptionFunc) (err error) {
 	options := &Options{
 		method:     http.MethodGet,

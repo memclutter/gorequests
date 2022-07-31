@@ -7,12 +7,16 @@ import (
 	"testing"
 )
 
-func TestRun(t *testing.T) {
+func init() {
+	// Run echo webserver
 	go func() {
 		if err := http.ListenAndServe(":8000", server{}); err != nil {
 			panic(err.Error())
 		}
 	}()
+}
+
+func TestRun(t *testing.T) {
 
 	excepted := serverInfo{
 		Method: http.MethodGet,
@@ -40,6 +44,35 @@ func TestRun(t *testing.T) {
 		WithOut(&out, OutTypeJson),
 	), "The run should exec without error")
 	assert.Equal(t, excepted, out, "The run should return correct json")
+}
+
+func TestGet(t *testing.T) {
+	testMethod(t, Get, http.MethodGet)
+}
+
+func TestPost(t *testing.T) {
+	testMethod(t, Post, http.MethodPost)
+}
+
+func TestPut(t *testing.T) {
+	testMethod(t, Put, http.MethodPut)
+}
+
+func TestPatch(t *testing.T) {
+	testMethod(t, Patch, http.MethodPatch)
+}
+
+func TestDelete(t *testing.T) {
+	testMethod(t, Delete, http.MethodDelete)
+}
+
+func testMethod(t *testing.T, f func(...OptionFunc) error, method string) {
+	out := serverInfo{}
+	assert.Nil(t, f(
+		WithUrl("http://localhost:8000/path/"),
+		WithOut(&out, OutTypeJson),
+	), "The run should exec without error")
+	assert.Equalf(t, method, out.Method, "The %s should return correct method", method)
 }
 
 type serverInfo struct {
