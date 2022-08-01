@@ -3,6 +3,7 @@ package gorequests
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/memclutter/gocore/pkg/coreslices"
 	"io/ioutil"
 	"net/http"
 )
@@ -81,6 +82,13 @@ func Run(optionsOverride ...OptionFunc) (err error) {
 	out, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return fmt.Errorf("read out error: %v", err)
+	}
+
+	// Check status codes
+	if len(options.errStatusCodes) > 0 {
+		if coreslices.IntIn(res.StatusCode, options.errStatusCodes) {
+			return fmt.Errorf("http error %d: %s", res.StatusCode, out[:50])
+		}
 	}
 
 	if options.out != nil {

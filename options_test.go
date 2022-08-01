@@ -163,3 +163,19 @@ func TestWithOut(t *testing.T) {
 		}
 	}
 }
+
+func TestWithErrStatusCodes(t *testing.T) {
+	cases := []struct {
+		codes []int
+	}{
+		{
+			codes: []int{http.StatusInternalServerError, http.StatusBadGateway},
+		},
+	}
+
+	for _, c := range cases {
+		options := &Options{}
+		assert.NoError(t, WithErrStatusCodes(c.codes...)(options), "Must be run without errors")
+		assert.Equal(t, c.codes, options.errStatusCodes, "The options.errStatusCodes should be equal")
+	}
+}
