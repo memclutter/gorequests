@@ -40,7 +40,7 @@ func Run(optionsOverride ...OptionFunc) (err error) {
 		}
 	}
 
-	client := &http.Client{}
+	client := http.DefaultClient
 	for _, ext := range options.extensions {
 		if client, err = ext.ClientOverride(client); err != nil {
 			return fmt.Errorf("extension client override error: %v", err)

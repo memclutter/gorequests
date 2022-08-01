@@ -24,10 +24,11 @@ type RetryExtension struct {
 
 func (e RetryExtension) ClientOverride(c *http.Client) (*http.Client, error) {
 	rc := retryablehttp.NewClient()
+	rc.HTTPClient = c
 	rc.RetryMax = e.RetryMax
 	rc.RetryWaitMin = e.RetryWaitMin
 	rc.RetryWaitMax = e.RetryWaitMax
-	rc.Logger = nil
+	//rc.Logger = nil
 	return rc.StandardClient(), nil
 }
 
@@ -46,11 +47,23 @@ func (e ProxiesExtension) ClientOverride(c *http.Client) (*http.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error parse proxy url %s: %v", proxy, err)
 	}
-	return &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyURL(proxyUrl),
-		},
-	}, nil
+	if c.Transport == nil {
+		c = &http.Client{
+			Transport: &http.Transport{
+				Proxy: http.ProxyURL(proxyUrl),
+			},
+		}
+	} else if t, ok := c.Transport.(*http.Transport); ok {
+		t.Proxy = http.ProxyURL(proxyUrl)
+	} else if t, ok := c.Transport.(*retryablehttp.RoundTripper); ok {
+		if t.Client.HTTPClient.Transport == nil {
+			t.Client.HTTPClient.Transport = &http.Transport{}
+		}
+		t.Client.HTTPClient.Transport.(*http.Transport).Proxy = http.ProxyURL(proxyUrl)
+	} else {
+		return c, fmt.Errorf("unsupported http transport: %T", c.Transport)
+	}
+	return c, nil
 }
 
 func (e ProxiesExtension) RequestOverride(req *http.Request) (*http.Request, error) { return req, nil }
