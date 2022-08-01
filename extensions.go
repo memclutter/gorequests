@@ -28,7 +28,7 @@ func (e RetryExtension) ClientOverride(c *http.Client) (*http.Client, error) {
 	rc.RetryMax = e.RetryMax
 	rc.RetryWaitMin = e.RetryWaitMin
 	rc.RetryWaitMax = e.RetryWaitMax
-	//rc.Logger = nil
+	rc.Logger = nil
 	return rc.StandardClient(), nil
 }
 
