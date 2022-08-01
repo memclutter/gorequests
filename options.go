@@ -20,6 +20,7 @@ type Options struct {
 	cookies        []*http.Cookie
 	out            interface{}
 	outType        OutType
+	okStatusCodes  []int
 	errStatusCodes []int
 	extensions     []Extension
 }
@@ -83,6 +84,13 @@ func WithOut(out interface{}, outType OutType) OptionFunc {
 	return func(options *Options) error {
 		options.out = out
 		options.outType = outType
+		return nil
+	}
+}
+
+func WithOkStatusCodes(codes ...int) OptionFunc {
+	return func(options *Options) error {
+		options.okStatusCodes = codes
 		return nil
 	}
 }

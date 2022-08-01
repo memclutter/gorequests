@@ -179,3 +179,19 @@ func TestWithErrStatusCodes(t *testing.T) {
 		assert.Equal(t, c.codes, options.errStatusCodes, "The options.errStatusCodes should be equal")
 	}
 }
+
+func TestWithOkStatusCodes(t *testing.T) {
+	cases := []struct {
+		codes []int
+	}{
+		{
+			codes: []int{http.StatusOK, http.StatusCreated},
+		},
+	}
+
+	for _, c := range cases {
+		options := &Options{}
+		assert.NoError(t, WithOkStatusCodes(c.codes...)(options), "Must be run without errors")
+		assert.Equal(t, c.codes, options.okStatusCodes, "The options.okStatusCodes should be equal")
+	}
+}

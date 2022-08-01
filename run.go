@@ -87,7 +87,13 @@ func Run(optionsOverride ...OptionFunc) (err error) {
 	// Check status codes
 	if len(options.errStatusCodes) > 0 {
 		if coreslices.IntIn(res.StatusCode, options.errStatusCodes) {
-			return fmt.Errorf("http error %d: %s", res.StatusCode, out[:50])
+			return fmt.Errorf("http error status code %d: %s", res.StatusCode, out[:50])
+		}
+	}
+
+	if len(options.okStatusCodes) > 0 {
+		if !coreslices.IntIn(res.StatusCode, options.okStatusCodes) {
+			return fmt.Errorf("http not ok status code %d: %s", res.StatusCode, out[:50])
 		}
 	}
 
