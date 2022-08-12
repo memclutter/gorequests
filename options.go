@@ -3,6 +3,7 @@ package gorequests
 import (
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type OutType int
@@ -14,6 +15,7 @@ const (
 )
 
 type Options struct {
+	clientTimeout  time.Duration
 	method         string
 	url            string
 	headers        http.Header
@@ -26,6 +28,13 @@ type Options struct {
 }
 
 type OptionFunc func(options *Options) error
+
+func WithClientTimeout(clientTimeout time.Duration) OptionFunc {
+	return func(options *Options) error {
+		options.clientTimeout = clientTimeout
+		return nil
+	}
+}
 
 func WithMethod(method string) OptionFunc {
 	return func(options *Options) error {

@@ -5,7 +5,23 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+	"time"
 )
+
+func TestWithClientTimeout(t *testing.T) {
+	cases := []struct {
+		clientTimeout time.Duration
+	}{
+		{clientTimeout: 10 * time.Second},
+		{clientTimeout: 500 * time.Millisecond},
+	}
+
+	for _, c := range cases {
+		options := &Options{}
+		assert.NoError(t, WithClientTimeout(c.clientTimeout)(options))
+		assert.Equal(t, c.clientTimeout, options.clientTimeout, "The options.clientTimeout should be equal")
+	}
+}
 
 func TestWithUrl(t *testing.T) {
 	cases := []struct {
@@ -20,9 +36,7 @@ func TestWithUrl(t *testing.T) {
 
 	for _, c := range cases {
 		options := &Options{}
-		if err := WithUrl(c.url, c.args...)(options); err != nil {
-			t.Fatal(err)
-		}
+		assert.NoError(t, WithUrl(c.url, c.args...)(options))
 		assert.Equal(t, fmt.Sprintf(c.url, c.args...), options.url, "The options.url should be equal")
 	}
 }
@@ -39,9 +53,7 @@ func TestWithMethod(t *testing.T) {
 
 	for _, c := range cases {
 		options := &Options{}
-		if err := WithMethod(c.method)(options); err != nil {
-			t.Fatal(err)
-		}
+		assert.NoError(t, WithMethod(c.method)(options))
 		assert.Equal(t, c.method, options.method, "The options.method should be equal")
 	}
 }
@@ -57,9 +69,7 @@ func TestWithHeader(t *testing.T) {
 
 	for _, c := range cases {
 		options := &Options{}
-		if err := WithHeader(c.key, c.value)(options); err != nil {
-			t.Fatal(err)
-		}
+		assert.NoError(t, WithHeader(c.key, c.value)(options))
 		assert.Equal(t, c.value, options.headers.Get(c.key), "The options.header value should be set")
 	}
 }
@@ -76,9 +86,7 @@ func TestWithHeaders(t *testing.T) {
 
 	for _, c := range cases {
 		options := &Options{}
-		if err := WithHeaders(c.headers)(options); err != nil {
-			t.Fatal(err)
-		}
+		assert.NoError(t, WithHeaders(c.headers)(options))
 		for k, vv := range c.headers {
 			for _, v := range vv {
 				assert.Equalf(t, v, options.headers.Get(k), "The options.header[%s] value should be set", k)
@@ -107,9 +115,7 @@ func TestWithCookies(t *testing.T) {
 
 	for _, c := range cases {
 		options := &Options{}
-		if err := WithCookies(c.cookies...)(options); err != nil {
-			t.Fatal(err)
-		}
+		assert.NoError(t, WithCookies(c.cookies...)(options))
 		for i, exceptedCookie := range c.cookies {
 			found := false
 			for _, cookie := range options.cookies {
@@ -145,9 +151,7 @@ func TestWithOut(t *testing.T) {
 
 	for _, c := range cases {
 		options := &Options{}
-		if err := WithOut(c.out, c.outType)(options); err != nil {
-			t.Fatal(err)
-		}
+		assert.NoError(t, WithOut(c.out, c.outType)(options))
 		if c.outType == OutTypeBytes {
 			if out, ok := options.out.(*[]byte); ok {
 				*out = []byte("test")
