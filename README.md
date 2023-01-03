@@ -66,13 +66,14 @@ package main
 import (
 	"net"
 	"net/http"
+	"github.com/memclutter/gorequests"
 )
 
 func GetIPEasy() (ip net.IP, err error) {
-    err = Request().
+    err = gorequests.Request().
         Method(http.MethodGet).
         Url("https://api.ipify.org?format=json").
-        OkStatuses(http.StatusOK).
+		ResponseCodeOk(http.StatusOK).
         ResponseJson(&ip, ".ip").
 		Exec()
     return
@@ -88,11 +89,12 @@ package main
 import (
 	"net"
 	"net/http"
+	"github.com/memclutter/gorequests"
 )
 
 func GetIPEasy() (ip net.IP, err error) {
-	err = Get("https://api.ipify.org?format=json").
-		OkStatuses(http.StatusOK).
+	err = gorequests.Get("https://api.ipify.org?format=json").
+		ResponseCodeOk(http.StatusOK).
 		ResponseJson(&ip, ".ip").
 		Exec()
 	return
