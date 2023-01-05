@@ -8,6 +8,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 type requestsInstance struct {
@@ -17,6 +19,9 @@ type requestsInstance struct {
 	url               string
 	cookies           []*http.Cookie
 	headers           http.Header
+	data              []byte
+	contentType       string
+	form              url.Values
 	json              interface{}
 	responseOkCodes   []int
 	responseFailCodes []int
@@ -24,24 +29,42 @@ type requestsInstance struct {
 	respJson          interface{}
 }
 
-func Trace(url string) RequestsInstance   { return Requests().Method(http.MethodTrace).Url(url) }
-func Connect(url string) RequestsInstance { return Requests().Method(http.MethodConnect).Url(url) }
-func Head(url string) RequestsInstance    { return Requests().Method(http.MethodHead).Url(url) }
-func Options(url string) RequestsInstance { return Requests().Method(http.MethodOptions).Url(url) }
-func Get(url string) RequestsInstance     { return Requests().Method(http.MethodGet).Url(url) }
-func Post(url string) RequestsInstance    { return Requests().Method(http.MethodPost).Url(url) }
-func Put(url string) RequestsInstance     { return Requests().Method(http.MethodPut).Url(url) }
-func Delete(url string) RequestsInstance  { return Requests().Method(http.MethodDelete).Url(url) }
-func Patch(url string) RequestsInstance   { return Requests().Method(http.MethodPatch).Url(url) }
-func Requests() RequestsInstance          { return new(requestsInstance) }
+func Trace(url string, args ...any) RequestsInstance {
+	return Requests().Method(http.MethodTrace).Url(url, args...)
+}
+func Connect(url string, args ...any) RequestsInstance {
+	return Requests().Method(http.MethodConnect).Url(url, args...)
+}
+func Head(url string, args ...any) RequestsInstance {
+	return Requests().Method(http.MethodHead).Url(url, args...)
+}
+func Options(url string, args ...any) RequestsInstance {
+	return Requests().Method(http.MethodOptions).Url(url, args...)
+}
+func Get(url string, args ...any) RequestsInstance {
+	return Requests().Method(http.MethodGet).Url(url, args...)
+}
+func Post(url string, args ...any) RequestsInstance {
+	return Requests().Method(http.MethodPost).Url(url, args...)
+}
+func Put(url string, args ...any) RequestsInstance {
+	return Requests().Method(http.MethodPut).Url(url, args...)
+}
+func Delete(url string, args ...any) RequestsInstance {
+	return Requests().Method(http.MethodDelete).Url(url, args...)
+}
+func Patch(url string, args ...any) RequestsInstance {
+	return Requests().Method(http.MethodPatch).Url(url, args...)
+}
+func Requests() RequestsInstance { return new(requestsInstance) }
 
 func (r *requestsInstance) Method(method string) RequestsInstance {
 	r.method = method
 	return r
 }
 
-func (r *requestsInstance) Url(url string) RequestsInstance {
-	r.url = url
+func (r *requestsInstance) Url(url string, args ...any) RequestsInstance {
+	r.url = fmt.Sprintf(url, args...)
 	return r
 }
 
@@ -60,6 +83,19 @@ func (r *requestsInstance) Header(key, value string) RequestsInstance {
 		r.headers = http.Header{}
 	}
 	r.headers.Add(key, value)
+	return r
+}
+
+func (r *requestsInstance) Data(data []byte, contentType ...string) RequestsInstance {
+	r.data = data
+	if len(contentType) > 0 {
+		r.contentType = contentType[0]
+	}
+	return r
+}
+
+func (r *requestsInstance) Form(form url.Values) RequestsInstance {
+	r.form = form
 	return r
 }
 
@@ -103,7 +139,14 @@ func (r *requestsInstance) Use(middlewares ...interface{}) RequestsInstance {
 func (r *requestsInstance) Exec() (err error) {
 	var bodyReader io.Reader
 	var contentType string
-	if r.json != nil {
+	if r.data != nil {
+		bodyReader = bytes.NewReader(r.data)
+		contentType = r.contentType
+	}
+	if r.form != nil {
+		bodyReader = strings.NewReader(r.form.Encode())
+		contentType = "application/x-www-form-urlencoded"
+	} else if r.json != nil {
 		body, err := json.Marshal(r.json)
 		if err != nil {
 			return fmt.Errorf("request json body encode error: %v", err)
@@ -124,6 +167,7 @@ func (r *requestsInstance) Exec() (err error) {
 	if err != nil {
 		return err
 	}
+
 	if len(contentType) != 0 {
 		req.Header.Set("Content-Type", contentType)
 	}

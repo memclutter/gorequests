@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -22,7 +23,7 @@ func TestRequestSuite(t *testing.T)                                { suite.Run(t
 func (suite *RequestsSuite) TestShortcuts() {
 	tests := []struct {
 		method string
-		target func(url string) RequestsInstance
+		target RequestsShort
 	}{
 		{method: http.MethodGet, target: Get},
 		{method: http.MethodPost, target: Post},
@@ -38,14 +39,15 @@ func (suite *RequestsSuite) TestShortcuts() {
 	for _, test := range tests {
 		suite.Run(test.method, func() {
 			// Test data
-			reqUrl := "http://localhost"
-			callKey := test.method + " " + reqUrl
+			reqUrl := "http://localhost/projects/%d"
+			reqUrlParams := []any{1}
+			callKey := test.method + " " + fmt.Sprintf(reqUrl, reqUrlParams...)
 
 			// Mocking http calls
-			httpmock.RegisterResponder(test.method, reqUrl, httpmock.NewStringResponder(http.StatusOK, string("")))
+			httpmock.RegisterResponder(test.method, fmt.Sprintf(reqUrl, reqUrlParams...), httpmock.NewStringResponder(http.StatusOK, ""))
 
 			// Run test target
-			err := test.target(reqUrl).Exec()
+			err := test.target(reqUrl, reqUrlParams...).Exec()
 
 			// Prepare assert stats
 			httpStats := httpmock.GetCallCountInfo()
@@ -109,6 +111,93 @@ func (suite *RequestsSuite) TestHeader() {
 
 	// Run test target
 	err := Requests().Url(reqUrl).Method(method).Header(reqHeader, reqHeaderValue).Exec()
+
+	// Prepare assert stats
+	httpStats := httpmock.GetCallCountInfo()
+
+	// Assertions
+	assert.NoError(suite.T(), err, "should be run without error")
+	assert.Contains(suite.T(), httpStats, callKey, "should be send http request")
+	assert.Equal(suite.T(), 1, httpStats[callKey], "should be call once")
+}
+
+func (suite *RequestsSuite) TestData() {
+	// Test data
+	method := http.MethodPost
+	reqUrl := "http://localhost/books"
+	callKey := method + " " + reqUrl
+	reqData := []byte(`BINARY PROTO: DATA`)
+
+	// Mocking http calls
+	httpmock.RegisterResponder(method, reqUrl, func(request *http.Request) (*http.Response, error) {
+		body, _ := ioutil.ReadAll(request.Body)
+		if bytes.Contains(body, reqData) {
+			return httpmock.NewStringResponder(http.StatusOK, string(""))(request)
+		}
+		return httpmock.ConnectionFailure(request)
+	})
+
+	// Run test target
+	err := Requests().Url(reqUrl).Method(method).Data(reqData).Exec()
+
+	// Prepare assert stats
+	httpStats := httpmock.GetCallCountInfo()
+
+	// Assertions
+	assert.NoError(suite.T(), err, "should be run without error")
+	assert.Contains(suite.T(), httpStats, callKey, "should be send http request")
+	assert.Equal(suite.T(), 1, httpStats[callKey], "should be call once")
+}
+
+func (suite *RequestsSuite) TestDataWithContentType() {
+	// Test data
+	method := http.MethodPost
+	reqUrl := "http://localhost/books"
+	callKey := method + " " + reqUrl
+	reqData := []byte(`abc: a`)
+	reqDataContentType := "application/x-yaml"
+
+	// Mocking http calls
+	httpmock.RegisterResponder(method, reqUrl, func(request *http.Request) (*http.Response, error) {
+		body, _ := ioutil.ReadAll(request.Body)
+		if request.Header.Get("Content-Type") == reqDataContentType && bytes.Contains(body, reqData) {
+			return httpmock.NewStringResponder(http.StatusOK, string(""))(request)
+		}
+		return httpmock.ConnectionFailure(request)
+	})
+
+	// Run test target
+	err := Requests().Url(reqUrl).Method(method).Data(reqData, reqDataContentType).Exec()
+
+	// Prepare assert stats
+	httpStats := httpmock.GetCallCountInfo()
+
+	// Assertions
+	assert.NoError(suite.T(), err, "should be run without error")
+	assert.Contains(suite.T(), httpStats, callKey, "should be send http request")
+	assert.Equal(suite.T(), 1, httpStats[callKey], "should be call once")
+}
+
+func (suite *RequestsSuite) TestForm() {
+	// Test data
+	method := http.MethodPost
+	reqUrl := "http://localhost/books"
+	callKey := method + " " + reqUrl
+	reqForm := url.Values{}
+	reqForm.Set("name", "A Book")
+	reqForm.Set("year", "2023")
+
+	// Mocking http calls
+	httpmock.RegisterResponder(method, reqUrl, func(request *http.Request) (*http.Response, error) {
+		body, _ := ioutil.ReadAll(request.Body)
+		if request.Header.Get("Content-Type") == "application/x-www-form-urlencoded" && bytes.Contains(body, []byte(reqForm.Encode())) {
+			return httpmock.NewStringResponder(http.StatusOK, string(""))(request)
+		}
+		return httpmock.ConnectionFailure(request)
+	})
+
+	// Run test target
+	err := Requests().Url(reqUrl).Method(method).Form(reqForm).Exec()
 
 	// Prepare assert stats
 	httpStats := httpmock.GetCallCountInfo()
