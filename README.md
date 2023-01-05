@@ -73,9 +73,9 @@ func GetIPEasy() (ip net.IP, err error) {
     err = gorequests.Request().
         Method(http.MethodGet).
         Url("https://api.ipify.org?format=json").
-		ResponseCodeOk(http.StatusOK).
+        ResponseCodeOk(http.StatusOK).
         ResponseJson(&ip, ".ip").
-		Exec()
+        Exec()
     return
 }
 // ...
